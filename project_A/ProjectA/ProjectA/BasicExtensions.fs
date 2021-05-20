@@ -45,7 +45,16 @@ type BasicOps = class
   ///
   /// <returns>An M-size Vector b such that b = A * v.</returns>
   static member MatVecProduct (A : Matrix) (v : Vector) : Vector =
-     let mutable b =  Vector(1)
+     let m_rows = A.M_Rows
+     let n_cols = A.N_Cols
+     let mutable b =  Vector(m_rows)
+
+     ///Iterate over the rows of A, for each row calculate the carry - ie b_i = sum_{j} a_ij*v_i 
+     for i in 0..m_rows-1 do
+          let mutable carry = 0.0
+          for j in 0..n_cols-1 do
+              carry <- carry + (A.[i, j] * v.[j])
+          b.[i] <- carry
      b
 
   /// <summary>
@@ -63,9 +72,32 @@ type BasicOps = class
   ///
   /// <returns>The M-by-P Matrix A * B.</returns>
   static member MatrixProduct (A : Matrix) (B : Matrix) : Matrix =
-    let mutable C =  Matrix(1, 1)
-    C
+    let m_rows = A.M_Rows
+    let n_cols = A.N_Cols
+    let p_cols = B.N_Cols
+    let mutable retval = Matrix(m_rows, p_cols)
 
+    ///We iterate over each row in A, for each row we calculate the carry - ie c_ij = sum_{j, k} a_ij * b_kj
+    for i in 0..m_rows-1 do
+        for j in 0..p_cols-1 do
+            let mutable carry = 0.0
+            for k in 0..n_cols-1 do
+                carry <- carry + (A.[i, k] * B.[k, j])
+            retval.[i, j] <- carry
+
+    retval
+    // An attempt to utilize the previous functions,  as a way to try and avoid "column major behavior" on "row major" matrix 'object'.
+    ///let m_rows = A.M_Rows
+    ///let n_cols = A.N_Cols
+    ///let p_cols = B.N_Cols
+    ///let mutable retval = MatVecProduct(A, B.column[0])
+    ///let mutable carry  = Vector(m_rows)
+    ///
+    ///for i in 1..p_cols-1 do
+    ///      carry <- MatVecProduct(A, B.column[i])
+    ///      retval <- AugmentRight(retval, carry)
+    ///retval
+    
   /// <summary>
   /// This function computes the transpose of a given Matrix.
   /// </summary>
@@ -79,8 +111,15 @@ type BasicOps = class
   ///
   /// <returns>The N-by-M Matrix B such that B = A^T.</returns>
   static member Transpose (A : Matrix) : Matrix =
-    let mutable B =  Matrix(1, 1)
-    B
+    let m_rows = A.M_Rows
+    let n_cols = A.N_Cols
+    let mutable retval =  Matrix(n_cols, m_rows)
+
+    /// We iterate over each item and set the corresponding in the mutable. An attempt was made to utilize row-first indexing
+    for i in 0..m_rows-1 do
+        for j in 0..n_cols-1 do
+            retval.[j, i] <- A.[i, j]
+    retval
 
   /// <summary>
   /// This function computes the Euclidean Vector norm of a given
@@ -96,7 +135,14 @@ type BasicOps = class
   ///
   /// <returns>The Euclidean norm of the Vector.</returns>
   static member VectorNorm (v : Vector) : float =
-    0.0
+    let size = v.Size
+    let mutable carry = 0.0
+
+    /// we iterate over each item in the vector, squaring them and storing them in a temporary mutable, before returning the result of the sqrt function.
+    for i in 0..size-1 do
+      carry <- carry + (float)v.[i]**2.0
+
+    sqrt(carry)
 
   /// <summary>
   /// This function creates the square submatrix given a square
